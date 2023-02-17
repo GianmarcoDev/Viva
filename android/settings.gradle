@@ -1,0 +1,3 @@
+rootProject.name = 'viva'
+include ':app'
+include ':omronconnectivitylibrary'
