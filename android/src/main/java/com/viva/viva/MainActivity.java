@@ -46,6 +46,7 @@ import com.viva.viva.models.PreferencesManager;
 import com.omronhealthcare.OmronConnectivityLibrary.OmronLibrary.Model.OmronErrorInfo;
 import java.util.*;
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
 import androidx.annotation.Nullable;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
@@ -94,11 +95,14 @@ public class MainActivity extends FlutterActivity {
     private static EventChannel.EventSink attachTransferEvent;
     private static Handler transferHandler;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void configureFlutterEngine​(@NonNull FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
 
         new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMISSCAN).setStreamHandler(
                 new EventChannel.StreamHandler() {
