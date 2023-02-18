@@ -199,14 +199,14 @@ public class MainActivity extends FlutterActivity {
     protected void onDestroy() {
         super.onDestroy();
         // scanHandler.removeCallbacks(runnable);
-        scanHandler = null;
-        attachScanEvent = null;
-        connessionHandler = null;
-        attachConnessionEvent = null;
-        transferHandler=null;
-        attachTransferEvent=null;
-        isScanHandler=null;
-        attachIsScanEvent=null;
+        // scanHandler = null;
+        // attachScanEvent = null;
+        // connessionHandler = null;
+        // attachConnessionEvent = null;
+        // transferHandler=null;
+        // attachTransferEvent=null;
+        // isScanHandler=null;
+        // attachIsScanEvent=null;
     }
 
     //// fine stream
