@@ -34,9 +34,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const streamScan = EventChannel('scan');
-  static const streamConn = EventChannel('conn');
-  static const streamTransfer = EventChannel('transfer');
+  final _omronvivaBcm500Plugin = Viva();
 
   late StreamSubscription _streamSubscriptionData;
   late StreamSubscription _streamSubscriptionConn;
@@ -44,19 +42,33 @@ class _MyHomePageState extends State<MyHomePage> {
   String _currentValue = '';
   String _currentState = '';
   String _currentData = '';
-  final _omronvivaBcm500Plugin = Viva();
+  String _currentScan = '';
   @override
   void initState() {
     super.initState();
     _omronvivaBcm500Plugin.init();
     _startListener();
     _startConnListener();
+    _startIsScanListener();
     LastrecordeddataPreferences.init();
   }
 
-  void _startListener() {
+  void _startIsScanListener() {
     _streamSubscriptionData =
-        streamScan.receiveBroadcastStream().listen(_listenStream);
+        _omronvivaBcm500Plugin.streamIsScan.receiveBroadcastStream().listen(
+      (event) {
+        debugPrint("Received From Native----:  $event\n");
+        setState(() {
+          _currentScan = event.toString();
+        });
+      },
+    );
+  }
+
+  void _startListener() {
+    _streamSubscriptionData = _omronvivaBcm500Plugin.streamScan
+        .receiveBroadcastStream()
+        .listen(_listenStream);
   }
 
   void _cancelListener() {
@@ -74,8 +86,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _startConnListener() {
-    _streamSubscriptionConn =
-        streamConn.receiveBroadcastStream().listen(_listenConnStream);
+    _streamSubscriptionConn = _omronvivaBcm500Plugin.streamConn
+        .receiveBroadcastStream()
+        .listen(_listenConnStream);
   }
 
   void _cancelConnListener() {
@@ -93,8 +106,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _startTransferListener() {
-    _streamSubscriptionTra =
-        streamTransfer.receiveBroadcastStream().listen(_listenTransferStream);
+    _streamSubscriptionTra = _omronvivaBcm500Plugin.streamTransfer
+        .receiveBroadcastStream()
+        .listen(_listenTransferStream);
   }
 
   void _cancelTransferListener() {
@@ -124,6 +138,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
             const SizedBox(
               height: 5,
+            ),
+            Text(_currentScan.toUpperCase(), textAlign: TextAlign.justify),
+            const SizedBox(
+              height: 50,
             ),
             Text(_currentState.toUpperCase(), textAlign: TextAlign.justify),
             const SizedBox(

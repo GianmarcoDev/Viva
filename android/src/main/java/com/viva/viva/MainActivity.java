@@ -76,6 +76,10 @@ public class MainActivity extends FlutterActivity {
   private HashMap<String, String> profileSettings = null;
   private Intent mIntent = null;
 
+  public  final String STREAMISSCAN = "isscan";
+  private static EventChannel.EventSink attachIsScanEvent;
+  private static Handler isScanHandler;
+
     public  final String STREAMSCAN = "scan";
     private static EventChannel.EventSink attachScanEvent;
     final String TAG_NAME = "From_Native";
@@ -95,7 +99,31 @@ public class MainActivity extends FlutterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        System.out.println("oncreate");
+
+        new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMISSCAN).setStreamHandler(
+                new EventChannel.StreamHandler() {
+                    @Override
+                    public void onListen(Object args, final EventChannel.EventSink events) {
+                        Log.w(TAG_NAME, "Adding listener");
+
+                        attachIsScanEvent = events;
+
+                        isScanHandler = new Handler();
+                        
+
+                    }
+
+                    @Override
+                    public void onCancel(Object args) {
+
+                        isScanHandler = null;
+
+                        attachIsScanEvent = null;
+                        System.out.println("StreamHandler - onCanceled: ");
+
+                    }
+                });
+
         new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMSCAN).setStreamHandler(
                 new EventChannel.StreamHandler() {
                     @Override
@@ -175,6 +203,10 @@ public class MainActivity extends FlutterActivity {
         attachScanEvent = null;
         connessionHandler = null;
         attachConnessionEvent = null;
+        transferHandler=null;
+        attachTransferEvent=null;
+        isScanHandler=null;
+        attachIsScanEvent=null;
     }
 
     //// fine stream
@@ -456,11 +488,31 @@ public class MainActivity extends FlutterActivity {
                                 }
                             }, 500);
                             isScan=false;
+                            isScanHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    if (attachIsScanEvent != null) {
+                                        attachIsScanEvent.success(isScan);
+                                    }
+
+                                }
+                            });
                         }
                     });
 
         } else {
             isScan = true;
+            isScanHandler.post(new Runnable() {
+                @Override
+                public void run() {
+
+                    if (attachIsScanEvent != null) {
+                        attachIsScanEvent.success(isScan);
+                    }
+
+                }
+            });
             Log.d(TAG, "\u001B[32mInizio scan");
 
             mPeripheralList = new ArrayList<OmronPeripheral>();
@@ -488,6 +540,16 @@ public class MainActivity extends FlutterActivity {
 
                             } else {
                                 isScan = false;
+                                isScanHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+    
+                                        if (attachIsScanEvent != null) {
+                                            attachIsScanEvent.success(isScan);
+                                        }
+    
+                                    }
+                                });
                                 System.out.println(resultInfo.getResultCode() + " / " + resultInfo.getDetailInfo());
                                 System.out.println(resultInfo.getMessageInfo());
                             }
@@ -520,16 +582,16 @@ public class MainActivity extends FlutterActivity {
 
                                     @Override
                                     public void run() {
-                                        String status = "Inizio....";
+                                        int status = 0;
 
                                         if (state == OmronConstants.OMRONBLEConnectionState.CONNECTING) {
-                                            status = "Connecting...";
+                                            status = 1;
                                         } else if (state == OmronConstants.OMRONBLEConnectionState.CONNECTED) {
-                                            status = "Connected";
+                                            status = 2;
                                         } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTING) {
-                                            status = "Disconnecting...";
+                                            status = 3;
                                         } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTED) {
-                                            status = "Disconnected";
+                                            status = 4;
         
                                         }
                                         System.out.println("\u001B[33m Stato " + status);

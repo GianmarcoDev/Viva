@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 import 'viva_platform_interface.dart';
 
 class Viva {
@@ -40,4 +42,10 @@ class Viva {
   Future<String?> setDevicePosition(int devicePosition) {
     return VivaPlatform.instance.setDevicePosition(devicePosition);
   }
+
+  EventChannel streamIsScan = const EventChannel('isscan');
+  EventChannel streamScan = const EventChannel('scan');
+
+  EventChannel streamConn = const EventChannel('conn');
+  EventChannel streamTransfer = const EventChannel('transfer');
 }
