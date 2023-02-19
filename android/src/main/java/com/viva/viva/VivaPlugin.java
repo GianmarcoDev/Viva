@@ -74,21 +74,21 @@ public class VivaPlugin extends FlutterActivity implements FlutterPlugin, Method
   
   public final String STREAMISSCAN = "isscan";
   private static EventChannel.EventSink attachIsScanEvent;
-  private static Handler isScanHandler;
+  private static Handler isScanHandler=new Handler();
 
   public final String STREAMSCAN = "scan";
   private static EventChannel.EventSink attachScanEvent;
   final String TAG_NAME = "From_Native";
-  private static Handler scanHandler;
+  private static Handler scanHandler=new Handler();
 
   public final String STREAMCONNESSION = "conn";
   private static EventChannel.EventSink attachConnessionEvent;
-  private static Handler connessionHandler;
+  private static Handler connessionHandler=new Handler();
   static int devicePosition = 0;
 
   public final String STREAMTRANSFER = "transfer";
   private static EventChannel.EventSink attachTransferEvent;
-  private static Handler transferHandler;
+  private static Handler transferHandler=new Handler();
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "viva");
@@ -326,7 +326,7 @@ bday=userbDay;
     private ArrayList<Integer> selectedUsers = new ArrayList<>();
     private final int TIME_INTERVAL = 1000;
     private static OmronPeripheral mSelectedPeripheral;
-    Handler mHandler;
+    Handler mHandler =new Handler();
     Bundle mBundle = null;
     Runnable mRunnable;
     private PreferencesManager preferencesManager = null;
