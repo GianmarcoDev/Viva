@@ -55,43 +55,43 @@ import java.util.stream.*;
 
 public class MainActivity extends FlutterActivity {
 
-  // apikey 51DFC54A-0F99-4FF0-8AEA-71F5987FFF06
-  private String apiKey = "51DFC54A-0F99-4FF0-8AEA-71F5987FFF06";
-  private static Context mContext;
-  static Boolean isScan = false;
-  final String TAG = "DeviceList";
-  private Bundle weightBundle;
-  static ArrayList<OmronPeripheral> mPeripheralList;
-  static ScannedDevicesAdapter mScannedDevicesAdapter;
-  // ConnectedDeviceAdapter mConnectedDeviceAdapter;
-  List<HashMap<String, String>> fullDeviceList;
-  HashMap<String, String> device;
-  private int mSelectedUser = 1;
-  private ArrayList<Integer> selectedUsers = new ArrayList<>();
-  private final int TIME_INTERVAL = 1000;
-  private static OmronPeripheral mSelectedPeripheral;
-   Handler mHandler;
-   Bundle mBundle = null;
-   Runnable mRunnable;
-  private PreferencesManager preferencesManager = null;
-  private HashMap<String, String> profileSettings = null;
-  private Intent mIntent = null;
+    // apikey 51DFC54A-0F99-4FF0-8AEA-71F5987FFF06
+    private String apiKey = "51DFC54A-0F99-4FF0-8AEA-71F5987FFF06";
+    private static Context mContext;
+    static Boolean isScan = false;
+    final String TAG = "DeviceList";
+    private Bundle weightBundle;
+    static ArrayList<OmronPeripheral> mPeripheralList;
+    static ScannedDevicesAdapter mScannedDevicesAdapter;
+    // ConnectedDeviceAdapter mConnectedDeviceAdapter;
+    List<HashMap<String, String>> fullDeviceList;
+    HashMap<String, String> device;
+    private int mSelectedUser = 1;
+    private ArrayList<Integer> selectedUsers = new ArrayList<>();
+    private final int TIME_INTERVAL = 1000;
+    private static OmronPeripheral mSelectedPeripheral;
+    Handler mHandler;
+    Bundle mBundle = null;
+    Runnable mRunnable;
+    private PreferencesManager preferencesManager = null;
+    private HashMap<String, String> profileSettings = null;
+    private Intent mIntent = null;
 
-  public  final String STREAMISSCAN = "isscan";
-  private static EventChannel.EventSink attachIsScanEvent;
-  private static Handler isScanHandler;
+    public final String STREAMISSCAN = "isscan";
+    private static EventChannel.EventSink attachIsScanEvent;
+    private static Handler isScanHandler;
 
-    public  final String STREAMSCAN = "scan";
+    public final String STREAMSCAN = "scan";
     private static EventChannel.EventSink attachScanEvent;
     final String TAG_NAME = "From_Native";
     private static Handler scanHandler;
 
-    public  final String STREAMCONNESSION = "conn";
+    public final String STREAMCONNESSION = "conn";
     private static EventChannel.EventSink attachConnessionEvent;
     private static Handler connessionHandler;
     static int devicePosition = 0;
 
-    public  final String STREAMTRANSFER = "transfer";
+    public final String STREAMTRANSFER = "transfer";
     private static EventChannel.EventSink attachTransferEvent;
     private static Handler transferHandler;
 
@@ -100,104 +100,113 @@ public class MainActivity extends FlutterActivity {
         super.onCreate(savedInstanceState);
     }
 
+    private EventChannel channelIsScan;
+    private EventChannel channelScan;
+    private EventChannel channelConnession;
+    private EventChannel channelTransfer;
+
     @Override
     public void configureFlutterEngine​(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
+        System.out.println("------------------engine--------------------");
+        channelIsScan = new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMISSCAN);
+        channelIsScan.setStreamHandler(
+            new EventChannel.StreamHandler() {
+                @Override
+                public void onListen(Object args, final EventChannel.EventSink events) {
+                    Log.w(TAG_NAME, "Adding listener");
 
-        new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMISSCAN).setStreamHandler(
-                new EventChannel.StreamHandler() {
-                    @Override
-                    public void onListen(Object args, final EventChannel.EventSink events) {
-                        Log.w(TAG_NAME, "Adding listener");
+                    attachIsScanEvent = events;
 
-                        attachIsScanEvent = events;
+                    isScanHandler = new Handler();
 
-                        isScanHandler = new Handler();
-                        
+                }
 
-                    }
+                @Override
+                public void onCancel(Object args) {
 
-                    @Override
-                    public void onCancel(Object args) {
+                    isScanHandler = null;
 
-                        isScanHandler = null;
+                    attachIsScanEvent = null;
+                    System.out.println("StreamHandler - onCanceled: ");
 
-                        attachIsScanEvent = null;
-                        System.out.println("StreamHandler - onCanceled: ");
+                }
+            });
+               
 
-                    }
-                });
+        channelScan = new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMSCAN);
+        channelScan.setStreamHandler(
+            new EventChannel.StreamHandler() {
+                @Override
+                public void onListen(Object args, final EventChannel.EventSink events) {
+                    Log.w(TAG_NAME, "Adding listener");
 
-        new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMSCAN).setStreamHandler(
-                new EventChannel.StreamHandler() {
-                    @Override
-                    public void onListen(Object args, final EventChannel.EventSink events) {
-                        Log.w(TAG_NAME, "Adding listener");
+                    attachScanEvent = events;
 
-                        attachScanEvent = events;
+                    scanHandler = new Handler();
 
-                        scanHandler = new Handler();
-                        
+                }
 
-                    }
+                @Override
+                public void onCancel(Object args) {
 
-                    @Override
-                    public void onCancel(Object args) {
+                    scanHandler = null;
 
-                        scanHandler = null;
+                    attachScanEvent = null;
+                    System.out.println("StreamHandler - onCanceled: ");
 
-                        attachScanEvent = null;
-                        System.out.println("StreamHandler - onCanceled: ");
+                }
+            });
+        channelConnession = new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(),
+                STREAMCONNESSION);
+                
 
-                    }
-                });
-        new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMCONNESSION)
-                .setStreamHandler(
-                        new EventChannel.StreamHandler() {
-                            @Override
-                            public void onListen(Object args, final EventChannel.EventSink events) {
-                                Log.w(TAG_NAME, "Adding Connession listener");
-                                
-                                attachConnessionEvent = events;
+                        channelConnession.setStreamHandler(
+                            new EventChannel.StreamHandler() {
+                                @Override
+                                public void onListen(Object args, final EventChannel.EventSink events) {
+                                    Log.w(TAG_NAME, "Adding Connession listener");
+    
+                                    attachConnessionEvent = events;
+    
+                                    connessionHandler = new Handler();
+    
+                                }
+    
+                                @Override
+                                public void onCancel(Object args) {
+                                    attachConnessionEvent.endOfStream();
+                                    connessionHandler = null;
+    
+                                    attachConnessionEvent = null;
+    
+                                }
+                            });
+        channelTransfer = new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMTRANSFER);
+                
 
-                                connessionHandler = new Handler();
-
-
-                            }
-
-                            @Override
-                            public void onCancel(Object args) {
-                                attachConnessionEvent.endOfStream();
-                                connessionHandler = null;
-
-                                 attachConnessionEvent = null;
-
-                            }
-                        });
-                        new EventChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), STREAMTRANSFER)
-                        .setStreamHandler(
-                                new EventChannel.StreamHandler() {
-                                    @Override
-                                    public void onListen(Object args, final EventChannel.EventSink events) {
-                                        Log.w(TAG_NAME, "Adding transfer listener");
-                                        
-                                        attachTransferEvent = events;
-        
-                                        transferHandler = new Handler();
-        
-        
-                                    }
-        
-                                    @Override
-                                    public void onCancel(Object args) {
-                                        attachTransferEvent.endOfStream();
-                                        transferHandler = null;
-        
-                                        attachTransferEvent = null;
-        
-                                    }
-                                });
-    }  
+                        channelTransfer.setStreamHandler(
+                            new EventChannel.StreamHandler() {
+                                @Override
+                                public void onListen(Object args, final EventChannel.EventSink events) {
+                                    Log.w(TAG_NAME, "Adding transfer listener");
+    
+                                    attachTransferEvent = events;
+    
+                                    transferHandler = new Handler();
+    
+                                }
+    
+                                @Override
+                                public void onCancel(Object args) {
+                                    attachTransferEvent.endOfStream();
+                                    transferHandler = null;
+    
+                                    attachTransferEvent = null;
+    
+                                }
+                            });
+    }
 
     @Override
     protected void onDestroy() {
@@ -215,7 +224,6 @@ public class MainActivity extends FlutterActivity {
 
     //// fine stream
 
-    
     private void showErrorLoadingDevices() {
         if (fullDeviceList.size() == 0) {
             String information = "Invalid Library API key configured OR no devices supported for API Key. Please try again. ";
@@ -330,14 +338,6 @@ public class MainActivity extends FlutterActivity {
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mMessageReceiver,
                 new IntentFilter(OmronConstants.OMRONBLEConfigDeviceAvailabilityNotification));
     }
-
-
-
-
-
-
-
-
 
     public void scan(Context context) {
         int bluetoothState = OmronPeripheralManager.sharedManager(mContext).getBluetoothState();
@@ -458,7 +458,7 @@ public class MainActivity extends FlutterActivity {
         setStateChanges();
 
         if (isScan) {
-               
+
             // Stop Scanning for Devices using OmronPeripheralManager
             OmronPeripheralManager.sharedManager(mContext)
                     .stopScanPeripherals(new OmronPeripheralManagerStopScanListener() {
@@ -472,11 +472,11 @@ public class MainActivity extends FlutterActivity {
                                             "\u001B[36m device" + mPeripheralList.get(mPeripheralList.size() - 1));
 
                                 }
-                                //attachScanEvent.endOfStream(); 
+                                // attachScanEvent.endOfStream();
                                 // scanHandler = null;
 
                                 // attachScanEvent = null;
-                               
+
                             } else {
                                 System.out.println("\u001B[32m" + resultInfo.getResultCode());
                                 System.out.println("\u001B[32m" + resultInfo.getDetailInfo());
@@ -491,7 +491,7 @@ public class MainActivity extends FlutterActivity {
 
                                 }
                             }, 500);
-                            isScan=false;
+                            isScan = false;
                             isScanHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -526,7 +526,7 @@ public class MainActivity extends FlutterActivity {
 
                         public void onScanCompleted(final ArrayList<OmronPeripheral> peripheralList,
                                 final OmronErrorInfo resultInfo) {
-                                    videoList.clear();
+                            videoList.clear();
                             if (resultInfo.getResultCode() == 0) {
 
                                 mPeripheralList = peripheralList;
@@ -535,9 +535,9 @@ public class MainActivity extends FlutterActivity {
                                     if (peripheralList.size() > 0) {
                                         System.out.println("\u001B[35m device " + mPeripheralList
                                                 .get(mPeripheralList.size() - 1).getDeviceInformation());
-                                                for (OmronPeripheral omronPeripheral : mPeripheralList) {
-                                                    videoList.add(omronPeripheral.getDeviceInformation());
-                                                }
+                                        for (OmronPeripheral omronPeripheral : mPeripheralList) {
+                                            videoList.add(omronPeripheral.getDeviceInformation());
+                                        }
                                     }
                                     mScannedDevicesAdapter.setPeripheralList(mPeripheralList);
                                 }
@@ -547,11 +547,11 @@ public class MainActivity extends FlutterActivity {
                                 isScanHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-    
+
                                         if (attachIsScanEvent != null) {
                                             attachIsScanEvent.success(isScan);
                                         }
-    
+
                                     }
                                 });
                                 System.out.println(resultInfo.getResultCode() + " / " + resultInfo.getDetailInfo());
@@ -570,8 +570,8 @@ public class MainActivity extends FlutterActivity {
                         }
                     });
         }
-      //  isScan = !isScan;
-        
+        // isScan = !isScan;
+
     }
 
     private void setStateChanges() {
@@ -582,38 +582,33 @@ public class MainActivity extends FlutterActivity {
                     @Override
                     public void onConnectStateChange(final int state) {
 
-                                runOnUiThread(new Runnable() {
+                        runOnUiThread(new Runnable() {
 
-                                    @Override
-                                    public void run() {
-                                        int status = 0;
+                            @Override
+                            public void run() {
+                                int status = 0;
 
-                                        if (state == OmronConstants.OMRONBLEConnectionState.CONNECTING) {
-                                            status = 1;
-                                        } else if (state == OmronConstants.OMRONBLEConnectionState.CONNECTED) {
-                                            status = 2;
-                                        } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTING) {
-                                            status = 3;
-                                        } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTED) {
-                                            status = 4;
-        
-                                        }
-                                        System.out.println("\u001B[33m Stato " + status);
-                                        try {
-                                              if (attachConnessionEvent != null ) {
-                                             
-                                               attachConnessionEvent.success(status);
-                                           }   
-                                        } catch (Exception e) {
-                                           System.out.println("\u001B[33m Errore Stato " + e);
-                                        }
+                                if (state == OmronConstants.OMRONBLEConnectionState.CONNECTING) {
+                                    status = 1;
+                                } else if (state == OmronConstants.OMRONBLEConnectionState.CONNECTED) {
+                                    status = 2;
+                                } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTING) {
+                                    status = 3;
+                                } else if (state == OmronConstants.OMRONBLEConnectionState.DISCONNECTED) {
+                                    status = 4;
+
+                                }
+                                System.out.println("\u001B[33m Stato " + status);
+                                try {
+                                    if (attachConnessionEvent != null) {
+
+                                        attachConnessionEvent.success(status);
                                     }
-                                });
-
-                               
-
-                               
-
+                                } catch (Exception e) {
+                                    System.out.println("\u001B[33m Errore Stato " + e);
+                                }
+                            }
+                        });
 
                     }
                 });
@@ -634,13 +629,12 @@ public class MainActivity extends FlutterActivity {
                 new OmronPeripheralManagerConnectListener() {
 
                     public void onConnectCompleted(final OmronPeripheral peripheral, final OmronErrorInfo resultInfo) {
-                        System.out.println("\u001B[33mAvvio libreria connessione " + resultInfo.getResultCode()+" "+ resultInfo.getDetailInfo());
+                        System.out.println("\u001B[33mAvvio libreria connessione " + resultInfo.getResultCode() + " "
+                                + resultInfo.getDetailInfo());
                         System.out.println(profileSettings);
-                        
-                       connectionUpdateWithPeripheral(mSelectedPeripheral, resultInfo, false);
-                            
-                          
-                        
+
+                        connectionUpdateWithPeripheral(mSelectedPeripheral, resultInfo, false);
+
                     }
                 });
     }
@@ -662,7 +656,7 @@ public class MainActivity extends FlutterActivity {
         Log.d(TAG, "\u001B[32mKEY_WEIGHT_SETTINGS " + weightBundle);
         Log.d(TAG, "\u001B[32mKEY_PERSONAL_SETTINGS "
                 + mIntent.getSerializableExtra(Constants.extraKeys.KEY_PERSONAL_SETTINGS));
-                setStateChanges();
+        setStateChanges();
         if (resultInfo.getResultCode() == 0 && peripheral != null) {
 
             mSelectedPeripheral = peripheral;
@@ -694,12 +688,12 @@ public class MainActivity extends FlutterActivity {
                     System.out.println("\u001B[32mConnesso");
                 }
                 Log.d(TAG, "\u001B[32mConnesso");
-               
+
             }
         } else {
             System.out.println("\u001B[32mErrore----- " + resultInfo.getDetailInfo() + resultInfo.getMessageInfo());
         }
-            
+
     }
 
     private void resumeConnection(final OmronPeripheral omronPeripheral) {
@@ -914,36 +908,37 @@ public class MainActivity extends FlutterActivity {
 
                                                 for (HashMap<String, Object> w : weightItemList) {
                                                     System.out.println("\u001B[32m" + w);
-  
+
                                                 }
                                                 transferHandler.post(new Runnable() {
                                                     @Override
                                                     public void run() {
-                    
+
                                                         if (attachTransferEvent != null) {
-                                                            if(weightItemList.size()>0){
-                                                                attachTransferEvent.success(weightItemList.get(weightItemList.size()-1));
-                                                            }else{
-                                                                attachTransferEvent.success(new ArrayList());   
+                                                            if (weightItemList.size() > 0) {
+                                                                attachTransferEvent.success(
+                                                                        weightItemList.get(weightItemList.size() - 1));
+                                                            } else {
+                                                                attachTransferEvent.success(new ArrayList());
                                                             }
-                                                         
+
                                                         }
-                    
+
                                                     }
-                                                    
+
                                                 });
-                                             //   attachTransferEvent.endOfStream();
-                                            }else{
+                                                // attachTransferEvent.endOfStream();
+                                            } else {
                                                 transferHandler.post(new Runnable() {
                                                     @Override
                                                     public void run() {
-                    
+
                                                         if (attachTransferEvent != null) {
                                                             attachTransferEvent.success("");
                                                         }
-                    
+
                                                     }
-                                                    
+
                                                 });
                                             }
                                         }
@@ -1051,79 +1046,74 @@ public class MainActivity extends FlutterActivity {
                     @Override
                     public void onUpdateCompleted(final OmronPeripheral peripheral, final OmronErrorInfo resultInfo) {
 
-                       
+                        if (resultInfo.getResultCode() == 0 && peripheral != null) {
 
-                                if (resultInfo.getResultCode() == 0 && peripheral != null) {
+                            mSelectedPeripheral = peripheral;
 
-                                    mSelectedPeripheral = peripheral;
+                            if (null != peripheral.getLocalName()) {
 
-                                    if (null != peripheral.getLocalName()) {
+                                System.out.println("\u001B[32m" + peripheral.getLocalName());
+                                System.out.println("\u001B[32m" + peripheral.getUuid());
+                                // showMessage(getString(R.string.device_connected),
+                                // getString(R.string.update_success));
 
-                                        System.out.println("\u001B[32m" + peripheral.getLocalName());
-                                        System.out.println("\u001B[32m" + peripheral.getUuid());
-                                        // showMessage(getString(R.string.device_connected),
-                                        // getString(R.string.update_success));
+                                HashMap<String, String> deviceInformation = peripheral.getDeviceInformation();
+                                Log.d(TAG, "Device Information : " + deviceInformation);
 
-                                        HashMap<String, String> deviceInformation = peripheral.getDeviceInformation();
-                                        Log.d(TAG, "Device Information : " + deviceInformation);
-
-                                        ArrayList<HashMap> deviceSettings = mSelectedPeripheral.getDeviceSettings();
-                                        if (deviceSettings != null) {
-                                            Log.d(TAG, "Device Settings:" + deviceSettings.toString());
-                                        }
-                                        Object personalSettingsForUser1 = mSelectedPeripheral
-                                                .getDeviceSettingsWithUser(1);
-                                        if (personalSettingsForUser1 != null) {
-                                            Log.d(TAG, "Personal Settings for User 1:"
-                                                    + personalSettingsForUser1.toString());
-                                        }
-                                        Object personalSettingsForUser2 = mSelectedPeripheral
-                                                .getDeviceSettingsWithUser(2);
-                                        if (personalSettingsForUser2 != null) {
-                                            Log.d(TAG, "Personal Settings for User 2:"
-                                                    + personalSettingsForUser2.toString());
-                                        }
-
-                                        try {
-                                            Object personalSettingsForSelectedUser = mSelectedPeripheral
-                                                    .getDeviceSettingsWithUser(mSelectedUser);
-                                            if (personalSettingsForSelectedUser != null) {
-                                                HashMap<String, Object> settings = (HashMap<String, Object>) personalSettingsForSelectedUser;
-                                                if (settings.containsKey(
-                                                        OmronConstants.OMRONDevicePersonalSettings.WeightKey)) {
-                                                    HashMap<String, Object> weightSettings = (HashMap<String, Object>) settings
-                                                            .get(OmronConstants.OMRONDevicePersonalSettings.WeightKey);
-                                                    if (weightSettings != null) {
-                                                        if (weightSettings.containsKey(
-                                                                OmronConstants.OMRONDevicePersonalSettings.WeightDCIKey)) {
-                                                            long dciValue = (long) weightSettings.get(
-                                                                    OmronConstants.OMRONDevicePersonalSettings.WeightDCIKey);
-                                                            preferencesManager.saveDCIValue(dciValue);
-                                                            System.out.println("\u001B[32m" + String.valueOf(dciValue));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } catch (Exception e) {
-                                            System.out.println("\u001B[32m" + "Eccezzione" + e);
-                                        }
-
-                                        OmronPeripheralManagerConfig peripheralConfig = OmronPeripheralManager
-                                                .sharedManager(mContext).getConfiguration();
-                                        Log.d(TAG,
-                                                "Device Config :  "
-                                                        + peripheralConfig.getDeviceConfigGroupIdAndGroupIncludedId(
-                                                                peripheral.getDeviceGroupIDKey(),
-                                                                peripheral.getDeviceGroupIncludedGroupIDKey()));
-                                    } else {
-
-                                        System.out.println("\u001B[32m" + resultInfo.getDetailInfo());
-                                        System.out.println("\u001B[32m" + resultInfo.getMessageInfo());
-                                    }
+                                ArrayList<HashMap> deviceSettings = mSelectedPeripheral.getDeviceSettings();
+                                if (deviceSettings != null) {
+                                    Log.d(TAG, "Device Settings:" + deviceSettings.toString());
+                                }
+                                Object personalSettingsForUser1 = mSelectedPeripheral
+                                        .getDeviceSettingsWithUser(1);
+                                if (personalSettingsForUser1 != null) {
+                                    Log.d(TAG, "Personal Settings for User 1:"
+                                            + personalSettingsForUser1.toString());
+                                }
+                                Object personalSettingsForUser2 = mSelectedPeripheral
+                                        .getDeviceSettingsWithUser(2);
+                                if (personalSettingsForUser2 != null) {
+                                    Log.d(TAG, "Personal Settings for User 2:"
+                                            + personalSettingsForUser2.toString());
                                 }
 
-                            
-                       
+                                try {
+                                    Object personalSettingsForSelectedUser = mSelectedPeripheral
+                                            .getDeviceSettingsWithUser(mSelectedUser);
+                                    if (personalSettingsForSelectedUser != null) {
+                                        HashMap<String, Object> settings = (HashMap<String, Object>) personalSettingsForSelectedUser;
+                                        if (settings.containsKey(
+                                                OmronConstants.OMRONDevicePersonalSettings.WeightKey)) {
+                                            HashMap<String, Object> weightSettings = (HashMap<String, Object>) settings
+                                                    .get(OmronConstants.OMRONDevicePersonalSettings.WeightKey);
+                                            if (weightSettings != null) {
+                                                if (weightSettings.containsKey(
+                                                        OmronConstants.OMRONDevicePersonalSettings.WeightDCIKey)) {
+                                                    long dciValue = (long) weightSettings.get(
+                                                            OmronConstants.OMRONDevicePersonalSettings.WeightDCIKey);
+                                                    preferencesManager.saveDCIValue(dciValue);
+                                                    System.out.println("\u001B[32m" + String.valueOf(dciValue));
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("\u001B[32m" + "Eccezzione" + e);
+                                }
+
+                                OmronPeripheralManagerConfig peripheralConfig = OmronPeripheralManager
+                                        .sharedManager(mContext).getConfiguration();
+                                Log.d(TAG,
+                                        "Device Config :  "
+                                                + peripheralConfig.getDeviceConfigGroupIdAndGroupIncludedId(
+                                                        peripheral.getDeviceGroupIDKey(),
+                                                        peripheral.getDeviceGroupIncludedGroupIDKey()));
+                            } else {
+
+                                System.out.println("\u001B[32m" + resultInfo.getDetailInfo());
+                                System.out.println("\u001B[32m" + resultInfo.getMessageInfo());
+                            }
+                        }
 
                     }
                 });
