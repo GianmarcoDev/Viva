@@ -58,6 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _omronvivaBcm500Plugin.streamIsScan.receiveBroadcastStream().listen(
       (event) {
         debugPrint("Received From Native----:  $event\n");
+
         setState(() {
           _currentScan = event.toString();
         });
@@ -98,8 +99,9 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _listenConnStream(value) {
-    debugPrint("Received Status From Native:  $value\n");
+  Future<void> _listenConnStream(value) async {
+    int i = await _omronvivaBcm500Plugin.errorCode();
+    debugPrint("Received connStatus From Native:  $value  code $i");
     setState(() {
       _currentState = value.toString();
     });
@@ -118,8 +120,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _listenTransferStream(value) {
-    debugPrint("Received Status From Native:  $value\n");
+  Future<void> _listenTransferStream(value) async {
+    int i = await _omronvivaBcm500Plugin.errorCode();
+    debugPrint("Received transfer Status From Native:  $value code $i");
+
     setState(() {
       _currentData = value.toString();
     });

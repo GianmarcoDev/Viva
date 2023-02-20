@@ -84,4 +84,10 @@ class MethodChannelViva extends VivaPlatform {
     final version = await methodChannel.invokeMethod<String>('transfer');
     return version;
   }
+
+  @override
+  Future<int> errorCode() async {
+    String? code = await methodChannel.invokeMethod<String>('code');
+    return int.tryParse(code ?? '-1') ?? -1;
+  }
 }

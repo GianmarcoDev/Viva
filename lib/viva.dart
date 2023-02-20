@@ -43,6 +43,10 @@ class Viva {
     return VivaPlatform.instance.setDevicePosition(devicePosition);
   }
 
+  Future<int> errorCode() {
+    return VivaPlatform.instance.errorCode();
+  }
+
   EventChannel streamIsScan = const EventChannel('isscan');
   EventChannel streamScan = const EventChannel('scan');
 

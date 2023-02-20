@@ -62,4 +62,8 @@ abstract class VivaPlatform extends PlatformInterface {
   Future<String?> setDevicePosition(int position) {
     throw UnimplementedError('scan has not been implemented.');
   }
+
+  Future<int> errorCode() {
+    throw UnimplementedError('scan has not been implemented.');
+  }
 }

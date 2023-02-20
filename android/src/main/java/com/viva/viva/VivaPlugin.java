@@ -71,7 +71,7 @@ public class VivaPlugin extends FlutterActivity implements FlutterPlugin, Method
   private EventChannel channelScan;
   private EventChannel channelConnession;
   private EventChannel channelTransfer;
-  
+  public int errorStatusCode=-1;
   public final String STREAMISSCAN = "isscan";
   private static EventChannel.EventSink attachIsScanEvent;
   private static Handler isScanHandler=new Handler();
@@ -216,6 +216,9 @@ bday=userbDay;
   
    // mContext = flutterPluginBinding.getApplicationContext();
     switch(call.method){
+        case "code":   
+        result.success(String.valueOf(errorStatusCode));
+        break;
       case "setUserData":   
      
       try{       
@@ -309,6 +312,11 @@ bday=userbDay;
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     channel.setMethodCallHandler(null);
+    channelIsScan.setStreamHandler(null);
+    channelScan.setStreamHandler(null);
+     channelConnession.setStreamHandler(null);
+     channelTransfer.setStreamHandler(null);
+    
   }
 
   
@@ -563,58 +571,62 @@ bday=userbDay;
         return deviceSettings;
     }
 
+
+    private void stopScan(){
+ // Stop Scanning for Devices using OmronPeripheralManager
+ OmronPeripheralManager.sharedManager(mContext)
+ .stopScanPeripherals(new OmronPeripheralManagerStopScanListener() {
+
+     public void onStopScanCompleted(final OmronErrorInfo resultInfo) {
+
+         Log.d(TAG, "\u001B[32mStop scan");
+         if (resultInfo.getResultCode() == 0) {
+             if (mPeripheralList.size() > 0) {
+                 System.out.println(
+                         "\u001B[36m device" + mPeripheralList.get(mPeripheralList.size() - 1));
+
+             }
+             // attachScanEvent.endOfStream();
+             // scanHandler = null;
+
+             // attachScanEvent = null;
+
+         } else {
+             System.out.println("\u001B[32m" + resultInfo.getResultCode());
+             System.out.println("\u001B[32m" + resultInfo.getDetailInfo());
+         }
+         scanHandler.postDelayed(new Runnable() {
+             @Override
+             public void run() {
+
+                 if (attachScanEvent != null) {
+                     attachScanEvent.success(new ArrayList<>());
+                 }
+
+             }
+         }, 500);
+         isScan = false;
+         isScanHandler.post(new Runnable() {
+             @Override
+             public void run() {
+
+                 if (attachIsScanEvent != null) {
+                     attachIsScanEvent.success(isScan);
+                 }
+
+             }
+         });
+     }
+ });
+
+    }
     private void startScanning() {
 
         setStateChanges();
 
         if (isScan) {
-
-            // Stop Scanning for Devices using OmronPeripheralManager
-            OmronPeripheralManager.sharedManager(mContext)
-                    .stopScanPeripherals(new OmronPeripheralManagerStopScanListener() {
-
-                        public void onStopScanCompleted(final OmronErrorInfo resultInfo) {
-
-                            Log.d(TAG, "\u001B[32mStop scan");
-                            if (resultInfo.getResultCode() == 0) {
-                                if (mPeripheralList.size() > 0) {
-                                    System.out.println(
-                                            "\u001B[36m device" + mPeripheralList.get(mPeripheralList.size() - 1));
-
-                                }
-                                // attachScanEvent.endOfStream();
-                                // scanHandler = null;
-
-                                // attachScanEvent = null;
-
-                            } else {
-                                System.out.println("\u001B[32m" + resultInfo.getResultCode());
-                                System.out.println("\u001B[32m" + resultInfo.getDetailInfo());
-                            }
-                            scanHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-
-                                    if (attachScanEvent != null) {
-                                        attachScanEvent.success(new ArrayList<>());
-                                    }
-
-                                }
-                            }, 500);
-                            isScan = false;
-                            isScanHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-
-                                    if (attachIsScanEvent != null) {
-                                        attachIsScanEvent.success(isScan);
-                                    }
-
-                                }
-                            });
-                        }
-                    });
-
+stopScan();
+           
         } else {
             isScan = true;
             isScanHandler.post(new Runnable() {
@@ -653,20 +665,11 @@ bday=userbDay;
                                 }
 
                             } else {
-                                isScan = false;
-                                isScanHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-
-                                        if (attachIsScanEvent != null) {
-                                            attachIsScanEvent.success(isScan);
-                                        }
-
-                                    }
-                                });
+                                stopScan();
                                 System.out.println(resultInfo.getResultCode() + " / " + resultInfo.getDetailInfo());
                                 System.out.println(resultInfo.getMessageInfo());
                             }
+                            
                             scanHandler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -725,7 +728,7 @@ bday=userbDay;
     }
 
     public void connectPeripheral(final OmronPeripheral omronPeripheral, Context context) {
-
+        errorStatusCode=-1;
         initLists();
 
         setStateChanges();
@@ -744,7 +747,7 @@ bday=userbDay;
                         System.out.println(profileSettings);
 
                         connectionUpdateWithPeripheral(mSelectedPeripheral, resultInfo, false);
-
+                        
                     }
                 });
     }
@@ -766,9 +769,11 @@ bday=userbDay;
         Log.d(TAG, "\u001B[32mKEY_WEIGHT_SETTINGS " + weightBundle);
         Log.d(TAG, "\u001B[32mKEY_PERSONAL_SETTINGS "
                 + mIntent.getSerializableExtra(Constants.extraKeys.KEY_PERSONAL_SETTINGS));
-        setStateChanges();
-        if (resultInfo.getResultCode() == 0 && peripheral != null) {
-
+       
+        if ((resultInfo.getResultCode() == 0||resultInfo.getResultCode() == 4) && peripheral != null) {
+            
+            errorStatusCode=0;
+            setStateChanges();
             mSelectedPeripheral = peripheral;
 
             if (peripheral.getLocalName() != null) {
@@ -785,29 +790,25 @@ bday=userbDay;
                         .getConfiguration();
                 Log.d(TAG, "\u001B[36mDevice Config :  " + peripheralConfig.getDeviceConfigGroupIdAndGroupIncludedId(
                         peripheral.getDeviceGroupIDKey(), peripheral.getDeviceGroupIncludedGroupIDKey()));
-
-                if (wait) {
-                    mHandler = new Handler();
-                    mHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            resumeConnection(peripheral);
-                        }
-                    }, 3000);
-                } else {
-                    System.out.println("\u001B[32mConnesso");
-                }
-                Log.d(TAG, "\u001B[32mConnesso");
-
+                        
+    //    mHandler = new Handler();
+    //                 mHandler.postDelayed(new Runnable() {
+    //                     @Override
+    //                     public void run() {
+    //                         updateSettings();
+    //                     }
+    //                 }, 500);
             }
         } else {
             System.out.println("\u001B[32mErrore----- " + resultInfo.getDetailInfo() + resultInfo.getMessageInfo());
+            errorStatusCode=resultInfo.getResultCode();
+            setStateChanges();
         }
-
+        
     }
 
     private void resumeConnection(final OmronPeripheral omronPeripheral) {
-        setStateChanges();
+      //  setStateChanges();
         if (selectedUsers.size() > 1) {
             OmronPeripheralManager.sharedManager(mContext).resumeConnectPeripheral(
                     omronPeripheral, selectedUsers, new OmronPeripheralManagerConnectListener() {
@@ -849,6 +850,7 @@ bday=userbDay;
     }
 
     public void transferData() {
+        errorStatusCode=-1;
         if (mSelectedPeripheral == null) {
             System.out.println("\u001B[32mDevice Not Paired");
             return;
@@ -1029,11 +1031,12 @@ bday=userbDay;
                                                                 attachTransferEvent.success(
                                                                         weightItemList.get(weightItemList.size() - 1));
                                                             } else {
+                                                                System.out.println("\u001B[32m []" );
                                                                 attachTransferEvent.success(new ArrayList());
                                                             }
 
                                                         }
-
+                                                        errorStatusCode=errorInfo.getResultCode();
                                                     }
 
                                                 });
@@ -1044,12 +1047,13 @@ bday=userbDay;
                                                     public void run() {
 
                                                         if (attachTransferEvent != null) {
-                                                            attachTransferEvent.success("");
+                                                            attachTransferEvent.success(new ArrayList());
                                                         }
 
                                                     }
 
                                                 });
+                                                errorStatusCode=errorInfo.getResultCode();
                                             }
                                         }
                                     }
@@ -1224,7 +1228,7 @@ bday=userbDay;
                                 System.out.println("\u001B[32m" + resultInfo.getMessageInfo());
                             }
                         }
-
+setStateChanges();
                     }
                 });
     }
@@ -1237,7 +1241,7 @@ bday=userbDay;
         }
 
         // Set State Change Listener
-        setStateChanges();
+        
 
         System.out.println("\u001B[32mConnecting... ");
 
